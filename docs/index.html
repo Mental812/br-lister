@@ -292,10 +292,10 @@ const delta = (label, now, then) => {
   const word = { up: '上升', down: '下降', flat: '持平' }[cls];
   return `<span class="${cls}" aria-label="${label} ${word} ${Math.abs(v).toFixed(1)} 個百分點"><b>${label}</b>${{ up: '▲', down: '▼', flat: '±' }[cls]}${Math.abs(v).toFixed(1)}</span>`;
 };
-const spark = vs => {
+const spark = (vs, at = vs.length - 1) => {
   const pts = vs.map((v, i) => v == null ? null : [4 + i * 88 / (vs.length - 1), 32 - (Math.max(40, Math.min(100, v)) - 40) * 28 / 60]);
   const line = pts.filter(Boolean).map(p => p.map(n => n.toFixed(1)).join(',')).join(' ');
-  const last = pts[pts.length - 1];
+  const last = pts[at];
   return `<svg class="spark" viewBox="0 0 96 36" aria-hidden="true"><polyline points="${line}"/>${last ? `<circle cx="${last[0]}" cy="${last[1]}" r="3"/>` : ''}</svg>`;
 };
 // ponytail: 整月平均載客率的分級門檻，只描述「這個月整體」，不代表某一天好不好上
@@ -320,7 +320,12 @@ function lfPanel(outbound, dateStr) {
     .filter(f => f[6] === S.city && twSide(f, outbound) in TW && (!ap || twSide(f, outbound) === ap))
     .map(f => outbound ? f[2] : f[1]))];
   const n = L.months.length, m = +L.months[n - 1].slice(5);
-  const nowOf = c => L.ap[c]?.[dir]?.[n - 1];
+  // 選了日期就看「該月份」最近一次的資料（通常是去年同月），沒選或找不到就看最新月份
+  const ym = dateStr?.slice(0, 7), mm = ym?.slice(5);
+  let i = n - 1;
+  if (ym) for (let j = n - 1; j >= 0; j--) if (L.months[j].slice(5) === mm && L.months[j] <= ym) { i = j; break; }
+  const ref = L.months[i], past = i < n - 1;
+  const nowOf = c => L.ap[c]?.[dir]?.[i];
   const known = codes.filter(c => nowOf(c) != null);
   const emptiest = known.length > 1 ? known.reduce((a, b) => nowOf(b) < nowOf(a) ? b : a) : '';
   const name = c => AP[c] ? `${AP[c]} ${c}` : `${S.city} ${c}`;
@@ -329,18 +334,20 @@ function lfPanel(outbound, dateStr) {
     if (now == null) return `<div class="lfrow"><span class="ap">${name(c)}</span><span class="lfnote">民航局無此航點資料</span></div>`;
     const [cls, word] = verdict(now);
     return `<div class="lfrow">
-      <span><span class="ap">${name(c)}</span><span class="badge ${cls}">${word}</span>${c === emptiest ? '<span class="badge best">較空</span>' : ''}</span>${spark(s)}
+      <span><span class="ap">${name(c)}</span><span class="badge ${cls}">${word}</span>${c === emptiest ? '<span class="badge best">較空</span>' : ''}</span>${spark(s, i)}
       <span><span class="pct">${now.toFixed(1)}<small>%</small></span>
-        <span class="deltas">${delta('比上月', now, s[n - 2])}${delta('比去年', now, s[n - 13])}</span></span></div>`;
+        <span class="deltas">${past
+          ? `<span class="flat"><b>最新 ${m} 月</b>${s[n - 1] == null ? '—' : s[n - 1].toFixed(1) + '%'}</span>${delta('比去年同月', s[n - 1], s[n - 13])}`
+          : `${delta('比上月', now, s[n - 2])}${delta('比去年', now, s[n - 13])}`}</span></span></div>`;
   }).join('');
   const k = dateStr && dayKind(dateStr);
   const dayWarn = k ? `<div class="note ${k[0]}" role="note">${icon.alert}<span><b>${short(dateStr)} 是${k[1]}</b>：${
     k[0] === 'hard' ? '機位通常非常滿，下面的月平均不適用，請先查訂位系統並準備備案。'
                     : '通常比月平均滿不少，月均偏空也不代表這天好上。'}</span></div>` : '';
   return rows && `<section class="lf" aria-label="機位參考">
-    <h2>機位參考・${outbound ? '去程' : '回程'}<small>長榮 ${m} 月載客率</small></h2>${dayWarn}${rows}
+    <h2>機位參考・${outbound ? '去程' : '回程'}<small>長榮 ${{ 0: '', 1: '去年 ' }[ym ? ym.slice(0, 4) - ref.slice(0, 4) : 0] ?? ref.slice(0, 4) + ' 年 '}${+ref.slice(5)} 月載客率</small></h2>${dayWarn}${rows}
     <p>這是<b>整個月平均</b>（含平日與假日、台灣各機場合計），平日通常較空、假日較滿。<br>
-    月均偏空 &lt; ${LF_EASY}%｜月均普通 ${LF_EASY}～${LF_HARD}%｜月均偏滿 ≥ ${LF_HARD}%。▲ 變擠、▼ 變空，單位為百分點。</p></section>`;
+    月均偏空 &lt; ${LF_EASY}%｜月均普通 ${LF_EASY}～${LF_HARD}%｜月均偏滿 ≥ ${LF_HARD}%。▲ 變擠、▼ 變空，單位為百分點。${past ? `<br>出發月份還沒有資料，先看去年同月；「比去年同月」是最新 ${m} 月和去年 ${m} 月比，▲ 代表今年比去年擠。` : ''}</p></section>`;
 }
 
 function render() {
