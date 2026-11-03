@@ -20,6 +20,12 @@ if lf_path.exists():
     assert all(len(v['go']) == len(v['back']) == len(lf['months']) for v in lf['ap'].values())
     d['lf'] = lf
 
+# 放假日（fetch_holidays.py 產生，可有可無）
+hol_path = here / 'holidays.json'
+if hol_path.exists():
+    d['hol'] = json.loads(hol_path.read_text(encoding='utf-8'))
+    assert all(re.fullmatch(r'\d{4}-\d\d-\d\d', x) for x in d['hol'])
+
 html = (here / 'index.html').read_text(encoding='utf-8')
 new = re.sub(r'/\*DATA\*/.*?/\*END\*/', lambda _: '/*DATA*/' + json.dumps(d, ensure_ascii=False, separators=(',', ':')) + '/*END*/', html, flags=re.S)
 assert new != html or '/*DATA*/' + json.dumps(d, ensure_ascii=False, separators=(',', ':')) in html
