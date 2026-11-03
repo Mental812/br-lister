@@ -4,11 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="BR查詢">
 <meta name="color-scheme" content="light dark">
-<meta name="theme-color" content="#f2f2f7" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#0b6b4f" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0a3326" media="(prefers-color-scheme: dark)">
 <link rel="apple-touch-icon" href="icon.png">
 <title>BR 班號查詢</title>
 <style>
@@ -16,14 +16,16 @@
     --bg:#f2f2f7; --surface:#fff; --surface-2:#e9e9ee; --text:#0a0a0a; --muted:#636366;
     --line:#d8d8de; --accent:#0b6b4f; --on-accent:#fff; --accent-soft:#e3f1ec;
     --warn-bg:#fff4e0; --warn:#8a4b00; --tag-bg:#fde8e6; --tag:#a1251b;
-    --seg-on:#fff; --radius:16px; --shadow:0 1px 2px rgb(0 0 0 / .06), 0 1px 1px rgb(0 0 0 / .03);
+    --seg-on:#fff; --fav:#c27c0e; --radius:16px; --shadow:0 1px 2px rgb(0 0 0 / .06), 0 1px 1px rgb(0 0 0 / .03);
+    --hero:#0b6b4f; --hero-mint:#4cd6a0; --on-hero:#fff;
     --ease:cubic-bezier(.2,.8,.2,1);
   }
   @media (prefers-color-scheme: dark) {
     :root {
       --bg:#000; --surface:#1c1c1e; --surface-2:#2c2c2e; --text:#f5f5f7; --muted:#a1a1a6;
       --line:#38383a; --accent:#4cd6a0; --on-accent:#00281c; --accent-soft:#0f2e24;
-      --warn-bg:#3a2a10; --warn:#ffcf87; --tag-bg:#3d1714; --tag:#ffb4ab; --shadow:none; --seg-on:#636366;
+      --warn-bg:#3a2a10; --warn:#ffcf87; --tag-bg:#3d1714; --tag:#ffb4ab; --shadow:none; --seg-on:#636366; --fav:#ffc94d;
+      --hero:#0a3326;
     }
   }
   * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
@@ -37,13 +39,30 @@
   :focus-visible { outline:3px solid var(--accent); outline-offset:2px; }
   svg { width:20px; height:20px; flex:none; stroke:currentColor; fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
 
-  .wrap { max-width:560px; margin:auto; padding:calc(env(safe-area-inset-top) + 16px) 16px calc(env(safe-area-inset-bottom) + 32px); }
-  header h1 { margin:8px 0 0; font-size:32px; line-height:1.15; font-weight:800; letter-spacing:-.02em; }
-  header p { margin:4px 0 0; color:var(--muted); font-size:13px; }
+  .hero { background:var(--hero); color:var(--on-hero); padding:calc(env(safe-area-inset-top) + 20px) 16px 44px; }
+  .hero > div { max-width:560px; margin:auto; }
+  .hero h1 { margin:0; display:flex; align-items:center; gap:10px; font-size:32px; line-height:1.15; font-weight:800; letter-spacing:-.02em; }
+  .hero h1 span { background:var(--hero-mint); color:#00281c; padding:2px 12px 3px; border-radius:12px; letter-spacing:.02em; }
+  .hero p { margin:8px 0 0; font-size:13px; opacity:.85; }
+  .wrap { max-width:560px; margin:auto; padding:0 16px calc(env(safe-area-inset-bottom) + 32px); }
 
-  .panel { margin-top:16px; background:var(--surface); border-radius:var(--radius); box-shadow:var(--shadow); padding:4px 16px 14px; }
+  .panel { margin-top:-28px; position:relative; background:var(--surface); border-radius:var(--radius); box-shadow:var(--shadow); padding:4px 16px 14px; }
   .field-label { display:block; font-size:13px; color:var(--muted); padding-top:10px; }
-  .select { position:relative; }
+  .cityrow { display:flex; align-items:center; gap:4px; }
+  .select { position:relative; flex:1; min-width:0; }
+  .star {
+    width:44px; height:44px; border:0; border-radius:12px; background:none; color:var(--muted);
+    display:grid; place-items:center; transition:color .15s, scale .15s var(--ease);
+  }
+  .star svg { width:26px; height:26px; }
+  .star[aria-pressed="true"] { color:var(--fav); }
+  .star[aria-pressed="true"] svg, .chip .fav { fill:currentColor; }
+  .star:active { scale:.85; }
+  .chip .fav { width:14px; height:14px; margin:-2px 4px 0 -4px; vertical-align:middle; color:var(--fav); stroke:none; }
+  .chip[aria-pressed="true"] .fav { color:inherit; }
+  .airport { margin-top:12px; }
+  .airport > span { display:block; font-size:13px; color:var(--muted); padding-left:4px; }
+  .chips .sep { width:1px; align-self:stretch; margin:4px 2px; background:var(--line); }
   .select select {
     appearance:none; -webkit-appearance:none; width:100%; border:0; background:none;
     font-size:24px; font-weight:700; padding:2px 32px 6px 0; min-height:44px;
@@ -63,7 +82,7 @@
     transition:background .2s var(--ease), box-shadow .2s var(--ease);
   }
   .seg button b { display:block; font-size:16px; }
-  .seg button span { font-size:13px; color:var(--muted); }
+  .seg button span { font-size:13px; color:var(--muted); white-space:nowrap; }
   .seg button[aria-selected="true"] { background:var(--seg-on); box-shadow:0 1px 3px rgb(0 0 0 / .12); }
   .seg button[aria-selected="false"] b { color:var(--muted); }
   .seg button[aria-selected="true"] span { color:var(--text); opacity:.75; }
@@ -125,23 +144,24 @@
 </style>
 </head>
 <body>
-<div class="wrap">
-  <header>
-    <h1>BR 班號</h1>
+<header class="hero">
+  <div>
+    <h1><span>BR</span>班號查詢</h1>
     <p id="season"></p>
-  </header>
+  </div>
+</header>
+<div class="wrap">
 
   <section class="panel" aria-label="航點">
     <label class="field-label" for="city">航點</label>
-    <div class="select">
-      <select id="city"></select>
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+    <div class="cityrow">
+      <div class="select">
+        <select id="city"></select>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+      </div>
+      <button class="star" id="star" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 2 3.1 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8 5.8 21l1.2-6.8-5-4.9 6.9-1z"/></svg></button>
     </div>
-    <div class="chips" id="recent" aria-label="最近查過"></div>
-    <div id="originWrap" hidden>
-      <span class="field-label" id="originLabel">台灣出發／抵達機場</span>
-      <div class="chips" id="origin" role="group" aria-labelledby="originLabel"></div>
-    </div>
+    <div class="chips" id="recent" aria-label="最愛與最近查過"></div>
   </section>
 
   <div class="seg" role="tablist" aria-label="去程或回程">
@@ -158,6 +178,11 @@
     <button class="step" id="next" aria-label="後一天"><svg viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg></button>
   </div>
 
+  <div class="airport" id="originWrap" hidden>
+    <span id="originLabel"></span>
+    <div class="chips" id="origin" role="group" aria-labelledby="originLabel"></div>
+  </div>
+
   <main id="results" role="tabpanel" aria-live="polite"></main>
 
   <footer>資料來源：長榮航空官網時刻表，非官方工具。實際航班以訂位系統為準。<br>點班號卡片可複製號碼</footer>
@@ -167,7 +192,7 @@
 <script>
 // ponytail: 每週固定模式；資料由 build.py 從 data.json 塞進來，換季重爬
 const DATA = /*DATA*/{"from":"2026-10-25","to":"2027-03-27","fetched":"2026-11-03","cities":{"香港":"港澳","澳門":"港澳","東京":"日本","大阪":"日本","福岡":"日本","札幌":"日本","沖繩":"日本","仙台":"日本","青森":"日本","小松":"日本","松山(日本)":"日本","首爾":"韓國","釜山":"韓國","曼谷":"東南亞","新加坡":"東南亞","吉隆坡":"東南亞","胡志明市":"東南亞","河內":"東南亞","峴港":"東南亞","馬尼拉":"東南亞","宿霧":"東南亞","安吉利斯":"東南亞","雅加達":"東南亞","峇里島":"東南亞","清邁":"東南亞","金邊":"東南亞","德里":"南亞","上海":"中國大陸","北京":"中國大陸","廣州":"中國大陸","杭州":"中國大陸","成都":"中國大陸","洛杉磯":"美洲","舊金山":"美洲","西雅圖":"美洲","溫哥華":"美洲","紐約":"美洲","芝加哥":"美洲","休士頓":"美洲","達拉斯":"美洲","多倫多":"美洲","華盛頓特區":"美洲","倫敦":"歐洲","巴黎":"歐洲","阿姆斯特丹":"歐洲","維也納":"歐洲","慕尼黑":"歐洲","米蘭":"歐洲","布里斯本":"大洋洲"},"flights":[["845","KHH","HKG","09:15","10:55","0123456","香港","部分期間"],["849","KHH","HKG","16:40","18:25","0123456","香港",""],["846","HKG","KHH","12:15","13:45","0123456","香港","部分期間"],["850","HKG","KHH","19:30","21:05","0123456","香港",""],["829","KHH","MFM","08:45","10:30","014","澳門",""],["833","KHH","MFM","16:55","18:40","2356","澳門",""],["830","MFM","KHH","11:35","13:00","014","澳門",""],["834","MFM","KHH","20:10","21:35","2356","澳門",""],["706","KHH","PVG","16:50","19:05","01245","上海",""],["705","PVG","KHH","20:05","22:20","01245","上海",""],["120","KHH","FUK","15:30","18:55","01346","福岡",""],["119","FUK","KHH","19:55","22:00","01346","福岡",""],["146","KHH","ICN","06:50","10:45","2356","首爾",""],["172","KHH","ICN","15:45","19:40","014","首爾",""],["145","ICN","KHH","11:45","13:55","2356","首爾",""],["171","ICN","KHH","20:40","22:55","014","首爾",""],["182","KHH","KIX","07:05","10:55","0123456","大阪",""],["148","KHH","KIX","15:25","19:15","2356","大阪",""],["181","KIX","KHH","11:55","14:30","0123456","大阪",""],["147","KIX","KHH","20:20","22:55","2356","大阪",""],["108","KHH","NRT","07:00","11:25","0123456","東京",""],["107","NRT","KHH","12:25","15:45","0123456","東京",""],["891","TPE","HKG","07:00","09:00","0123456","香港",""],["851","TPE","HKG","08:10","10:10","0123456","香港",""],["867","TPE","HKG","09:50","11:50","0123456","香港",""],["869","TPE","HKG","12:25","14:20","0123456","香港",""],["871","TPE","HKG","16:35","18:30","0123456","香港",""],["857","TPE","HKG","18:10","20:05","0123456","香港",""],["809","TPE","HKG","19:00","20:50","1245","香港","部分期間"],["892","HKG","TPE","10:10","12:00","0123456","香港",""],["852","HKG","TPE","11:20","13:05","0123456","香港",""],["868","HKG","TPE","13:30","15:20","0123456","香港",""],["870","HKG","TPE","15:30","17:10","0123456","香港",""],["872","HKG","TPE","19:40","21:25","0123456","香港",""],["858","HKG","TPE","21:10","22:50","0123456","香港",""],["810","HKG","TPE","21:50","23:35","1245","香港","部分期間"],["801","TPE","MFM","10:00","11:55","0123456","澳門",""],["805","TPE","MFM","16:30","18:25","0123456","澳門",""],["802","MFM","TPE","13:15","14:55","0123456","澳門",""],["806","MFM","TPE","20:15","22:00","0123456","澳門",""],["707","TPE","CAN","08:10","10:15","015","廣州",""],["708","CAN","TPE","11:25","13:35","015","廣州",""],["765","TPE","CTU","14:20","18:05","15","成都",""],["766","CTU","TPE","19:20","22:40","15","成都",""],["758","TPE","HGH","16:25","18:15","035","杭州",""],["758","TPE","HGH","18:15","20:05","26","杭州",""],["757","HGH","TPE","19:35","21:30","035","杭州",""],["757","HGH","TPE","21:25","23:20","26","杭州",""],["716","TPE","PEK","09:05","12:40","246","北京",""],["716","TPE","PEK","15:00","18:40","03","北京",""],["716","TPE","PEK","16:00","19:35","15","北京",""],["715","PEK","TPE","13:55","17:20","246","北京",""],["715","PEK","TPE","19:55","23:00","03","北京",""],["715","PEK","TPE","20:50","23:55","15","北京",""],["712","TPE","PVG","09:50","12:05","0123456","上海",""],["752","TPE","PVG","12:35","14:35","5","上海",""],["722","TPE","PVG","16:30","18:25","0123456","上海",""],["711","PVG","TPE","13:15","15:15","0123456","上海",""],["751","PVG","TPE","16:00","18:00","5","上海",""],["721","PVG","TPE","20:10","22:10","0123456","上海",""],["122","TPE","AOJ","09:55","14:20","0123456","青森",""],["121","AOJ","TPE","15:30","19:00","0123456","青森",""],["166","TPE","CTS","06:15","11:00","0123456","札幌",""],["116","TPE","CTS","09:30","14:05","0123456","札幌",""],["165","CTS","TPE","12:10","16:05","0123456","札幌",""],["115","CTS","TPE","15:20","18:55","0123456","札幌",""],["106","TPE","FUK","08:00","11:15","0123456","福岡",""],["104","TPE","FUK","12:35","15:55","2","福岡",""],["104","TPE","FUK","13:40","16:55","5","福岡",""],["102","TPE","FUK","16:25","19:55","0123456","福岡",""],["105","FUK","TPE","12:15","13:50","0123456","福岡",""],["103","FUK","TPE","19:00","20:40","25","福岡",""],["101","FUK","TPE","20:55","22:40","0123456","福岡",""],["170","TPE","ICN","07:05","10:30","0123456","首爾",""],["160","TPE","ICN","15:15","18:45","0123456","首爾",""],["169","ICN","TPE","11:40","13:30","0123456","首爾",""],["159","ICN","TPE","19:45","21:40","0123456","首爾",""],["178","TPE","KIX","06:30","09:55","0123456","大阪",""],["132","TPE","KIX","08:20","11:55","0123456","大阪",""],["130","TPE","KIX","13:30","16:55","0123456","大阪",""],["177","KIX","TPE","10:55","13:10","0123456","大阪",""],["131","KIX","TPE","12:55","15:05","0123456","大阪",""],["129","KIX","TPE","18:10","20:25","0123456","大阪",""],["158","TPE","KMQ","06:35","10:25","0123456","小松",""],["157","KMQ","TPE","11:45","14:25","0123456","小松",""],["110","TPE","MYJ","06:25","09:45","034","松山(日本)",""],["109","MYJ","TPE","11:05","12:55","034","松山(日本)",""],["184","TPE","NRT","07:55","12:00","0123456","東京",""],["198","TPE","NRT","08:50","12:55","0123456","東京",""],["196","TPE","NRT","15:20","19:20","0123456","東京",""],["183","NRT","TPE","13:00","16:05","0123456","東京",""],["197","NRT","TPE","14:00","17:05","0123456","東京",""],["195","NRT","TPE","20:20","23:25","0123456","東京",""],["112","TPE","OKA","06:55","09:15","0123456","沖繩",""],["186","TPE","OKA","16:50","19:10","0123456","沖繩",""],["113","OKA","TPE","10:15","10:55","0123456","沖繩",""],["185","OKA","TPE","20:10","20:55","0123456","沖繩",""],["164","TPE","PUS","14:30","17:45","12345","釜山",""],["164","TPE","PUS","15:00","18:15","06","釜山",""],["163","PUS","TPE","18:55","20:25","12345","釜山",""],["163","PUS","TPE","19:25","21:00","06","釜山",""],["118","TPE","SDJ","10:15","14:25","0123456","仙台",""],["117","SDJ","TPE","16:15","19:30","0123456","仙台",""],["134","TPE","UKB","06:30","10:00","135","大阪",""],["176","TPE","UKB","14:30","18:00","0123456","大阪",""],["133","UKB","TPE","11:00","13:15","135","大阪",""],["175","UKB","TPE","19:00","21:15","0123456","大阪",""],["075","TPE","BKK","07:40","10:45","246","曼谷",""],["067","TPE","BKK","08:05","11:10","0123456","曼谷",""],["211","TPE","BKK","08:25","11:30","0123456","曼谷",""],["201","TPE","BKK","09:45","12:50","1346","曼谷",""],["205","TPE","BKK","20:45","23:40","0123456","曼谷",""],["061","TPE","BKK","22:30","01:25+1","1246","曼谷",""],["206","BKK","TPE","02:15","06:50","0123456","曼谷",""],["062","BKK","TPE","08:25","13:05","1346","曼谷",""],["212","BKK","TPE","12:45","17:15","0123456","曼谷",""],["202","BKK","TPE","14:35","19:15","1346","曼谷",""],["076","BKK","TPE","16:05","20:40","035","曼谷",""],["068","BKK","TPE","17:15","21:50","0123456","曼谷",""],["281","TPE","CEB","08:20","11:15","0123456","宿霧",""],["282","CEB","TPE","12:30","15:20","0123456","宿霧",""],["237","TPE","CGK","09:00","13:25","0123456","雅加達",""],["238","CGK","TPE","14:40","21:00","0123456","雅加達",""],["257","TPE","CNX","07:30","10:35","0123456","清邁",""],["258","CNX","TPE","11:50","16:20","0123456","清邁",""],["233","TPE","CRK","08:50","11:00","0123456","安吉利斯",""],["234","CRK","TPE","12:05","14:15","0123456","安吉利斯",""],["383","TPE","DAD","09:45","11:40","0123456","峴港",""],["384","DAD","TPE","13:00","16:50","0123456","峴港",""],["255","TPE","DPS","10:00","15:30","0123456","峇里島",""],["256","DPS","TPE","16:40","21:55","0123456","峇里島",""],["397","TPE","HAN","09:15","11:35","0123456","河內",""],["385","TPE","HAN","14:50","17:15","0123456","河內",""],["398","HAN","TPE","12:35","16:10","0123456","河內",""],["386","HAN","TPE","18:20","21:55","0123456","河內",""],["265","TPE","KTI","08:45","11:25","0123456","金邊",""],["266","KTI","TPE","12:45","17:05","0123456","金邊",""],["217","TPE","KUL","07:00","11:45","035","吉隆坡",""],["227","TPE","KUL","09:20","14:15","1246","吉隆坡",""],["218","KUL","TPE","12:55","17:35","035","吉隆坡",""],["228","KUL","TPE","15:25","20:05","1246","吉隆坡",""],["271","TPE","MNL","09:10","11:45","0123456","馬尼拉",""],["277","TPE","MNL","15:30","17:50","0123456","馬尼拉",""],["261","TPE","MNL","20:30","22:50","0123456","馬尼拉",""],["262","MNL","TPE","03:40","06:00","0123456","馬尼拉",""],["272","MNL","TPE","12:50","15:00","0123456","馬尼拉",""],["278","MNL","TPE","18:50","21:20","0123456","馬尼拉",""],["395","TPE","SGN","07:40","10:15","0123456","胡志明市",""],["391","TPE","SGN","09:10","11:35","0123456","胡志明市",""],["381","TPE","SGN","19:30","22:00","0123456","胡志明市",""],["382","SGN","TPE","01:55","06:10","0123456","胡志明市",""],["392","SGN","TPE","12:45","17:00","0123456","胡志明市",""],["396","SGN","TPE","15:35","19:55","0123456","胡志明市",""],["225","TPE","SIN","07:25","12:05","0123456","新加坡",""],["215","TPE","SIN","09:35","14:30","0123456","新加坡",""],["226","SIN","TPE","13:15","17:50","0123456","新加坡",""],["216","SIN","TPE","15:45","20:15","0123456","新加坡",""],["367","TPE","DEL","11:00","15:35","02356","德里","12/1起"],["368","DEL","TPE","19:55","04:20+1","02356","德里","12/1起"],["004","TPE","IAD","19:30","20:55","1356","華盛頓特區",""],["003","IAD","TPE","23:55","06:05+2","1356","華盛頓特區",""],["050","TPE","DFW","19:45","19:05","0123456","達拉斯",""],["049","DFW","TPE","23:05","05:25+2","0123456","達拉斯",""],["052","TPE","IAH","21:20","20:50","0123456","休士頓",""],["051","IAH","TPE","23:30","06:20+2","0123456","休士頓",""],["032","TPE","JFK","19:20","21:05","0123456","紐約",""],["031","JFK","TPE","00:05","06:20+1","0123456","紐約",""],["006","TPE","LAX","11:20","07:00","0123456","洛杉磯",""],["012","TPE","LAX","19:40","15:20","0123456","洛杉磯",""],["016","TPE","LAX","23:55","19:35","0123456","洛杉磯",""],["005","LAX","TPE","10:40","17:20+1","0123456","洛杉磯",""],["011","LAX","TPE","22:35","05:15+2","0123456","洛杉磯",""],["015","LAX","TPE","23:00","05:40+2","0123456","洛杉磯",""],["056","TPE","ORD","20:00","19:35","0123456","芝加哥",""],["055","ORD","TPE","23:30","05:25+2","0123456","芝加哥",""],["024","TPE","SEA","23:00","17:30","246","西雅圖",""],["026","TPE","SEA","23:40","18:10","0123456","西雅圖",""],["025","SEA","TPE","00:10","05:20+1","0123456","西雅圖",""],["023","SEA","TPE","23:30","04:40+2","246","西雅圖",""],["008","TPE","SFO","11:30","06:40","0123456","舊金山",""],["018","TPE","SFO","19:50","15:00","0123456","舊金山",""],["028","TPE","SFO","23:30","18:40","0123456","舊金山",""],["007","SFO","TPE","12:00","18:00+1","0123456","舊金山",""],["027","SFO","TPE","23:30","05:40+2","0123456","舊金山",""],["017","SFO","TPE","23:50","06:00+2","0123456","舊金山",""],["010","TPE","YVR","23:55","19:35","0123456","溫哥華",""],["009","YVR","TPE","01:15","05:15+1","0123456","溫哥華",""],["036","TPE","YYZ","19:20","20:20","0123456","多倫多",""],["035","YYZ","TPE","00:15","06:10+1","0123456","多倫多",""],["067","TPE","LHR","08:05","19:05","0123456","倫敦",""],["068","LHR","TPE","21:20","21:50+1","0123456","倫敦",""],["075","TPE","AMS","07:40","19:00","246","阿姆斯特丹",""],["076","AMS","TPE","21:20","20:40+1","246","阿姆斯特丹",""],["087","TPE","CDG","23:05","07:45+1","0123456","巴黎",""],["088","CDG","TPE","11:20","07:20+1","0123456","巴黎",""],["071","TPE","MUC","23:25","07:05+1","0135","慕尼黑",""],["072","MUC","TPE","11:30","06:30+1","1246","慕尼黑",""],["095","TPE","MXP","23:10","06:50+1","0123456","米蘭",""],["096","MXP","TPE","11:00","06:10+1","0123456","米蘭",""],["065","TPE","VIE","23:35","06:45+1","035","維也納",""],["061","TPE","VIE","22:30","08:10+1","1246","維也納",""],["066","VIE","TPE","12:05","06:40+1","146","維也納",""],["062","VIE","TPE","14:55","13:05+1","0235","維也納",""],["325","TPE","BNE","09:30","20:20","146","布里斯本",""],["326","BNE","TPE","22:35","05:05+1","146","布里斯本",""],["400","TSA","PVG","08:00","10:00","024","上海",""],["399","PVG","TSA","11:15","13:10","024","上海",""],["772","TSA","SHA","14:40","16:30","013456","上海",""],["771","SHA","TSA","19:40","21:45","013456","上海",""],["156","TSA","GMP","09:20","12:50","56","首爾",""],["156","TSA","GMP","14:30","18:00","2","首爾",""],["156","TSA","GMP","15:45","19:15","3","首爾",""],["155","GMP","TSA","13:50","15:35","56","首爾",""],["155","GMP","TSA","19:00","20:45","2","首爾",""],["155","GMP","TSA","20:15","22:00","3","首爾",""],["192","TSA","HND","07:15","11:00","0123456","東京",""],["190","TSA","HND","16:30","20:20","0123456","東京",""],["189","HND","TSA","10:25","13:25","0123456","東京",""],["191","HND","TSA","12:15","15:05","0123456","東京",""],["194","TPE","PUS","07:00","10:15","046","釜山","部分期間"],["194","TPE","PUS","07:45","11:00","3","釜山","部分期間"],["193","PUS","TPE","11:15","12:45","046","釜山","部分期間"],["193","PUS","TPE","12:00","13:30","3","釜山","部分期間"]]}/*END*/;
-const TW = { TPE:'桃園', TSA:'松山', KHH:'高雄', RMQ:'台中' };
+const TW = { TPE:'桃園', TSA:'台北松山', KHH:'高雄', RMQ:'台中' };
 // 同城市多機場時才需要分辨
 const AP = { NRT:'成田', HND:'羽田', ICN:'仁川', GMP:'金浦', PVG:'浦東', SHA:'虹橋', KIX:'關西', UKB:'神戶' };
 const WK = '日一二三四五六';
@@ -177,6 +202,7 @@ const icon = {
   alert:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></svg>',
   plane:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg>',
   check:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>',
+  star:'<svg class="fav" viewBox="0 0 24 24" aria-label="最愛"><path d="m12 2 3.1 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8 5.8 21l1.2-6.8-5-4.9 6.9-1z"/></svg>',
 };
 
 // ---- 日期工具（一律用當地日期字串 YYYY-MM-DD）
@@ -191,15 +217,28 @@ const S = {
   city: localStorage.city in DATA.cities ? localStorage.city : '東京',
   tab: 'go',
   date: { go: today, back: '' },
-  origin: localStorage.origin || '',
+  // 去程看出發機場、回程看抵達機場，各自獨立（去回可不同機場）
+  origin: { go: localStorage.originGo || '', back: localStorage.originBack || '' },
   recent: JSON.parse(localStorage.recent || '[]').filter(c => c in DATA.cities),
+  favs: JSON.parse(localStorage.favs || '[]').filter(c => c in DATA.cities),
 };
 
+const twSide = (f, outbound) => outbound ? f[1] : f[2];
+// 這個航點、這個方向有哪些台灣機場
+const twAirports = outbound => {
+  const here = new Set(DATA.flights.filter(f => f[6] === S.city).map(f => twSide(f, outbound)));
+  return Object.keys(TW).filter(c => here.has(c));
+};
+// 實際生效的篩選：該航點沒有這個機場、或只有一個機場時視為「全部」（不改動使用者的設定）
+const activeAp = outbound => {
+  const a = twAirports(outbound), v = S.origin[outbound ? 'go' : 'back'];
+  return a.length > 1 && a.includes(v) ? v : '';
+};
 function flightsFor(dateStr, outbound) {
-  const wd = parse(dateStr).getDay();
+  const wd = parse(dateStr).getDay(), ap = activeAp(outbound);
   return DATA.flights
-    .filter(f => f[6] === S.city && (outbound ? f[1] in TW : f[2] in TW) && f[5].includes(wd))
-    .filter(f => !S.origin || (outbound ? f[1] : f[2]) === S.origin)
+    .filter(f => f[6] === S.city && twSide(f, outbound) in TW && f[5].includes(wd))
+    .filter(f => !ap || twSide(f, outbound) === ap)
     .sort((a, b) => a[3].localeCompare(b[3]));
 }
 
@@ -218,24 +257,30 @@ function render() {
   const dateStr = S.date[S.tab];
   localStorage.city = S.city;
 
-  // 航點選單＋最近查過
+  // 航點選單＋最愛（固定在前）＋最近查過
   $('city').value = S.city;
-  $('recent').innerHTML = S.recent.length > 1 ? S.recent.map(c =>
-    `<button class="chip" data-city="${c}" aria-pressed="${c === S.city}">${c}</button>`).join('') : '';
+  const isFav = S.favs.includes(S.city);
+  $('star').setAttribute('aria-pressed', isFav);
+  $('star').setAttribute('aria-label', isFav ? `將${S.city}移出最愛` : `將${S.city}加入最愛`);
+  const others = S.recent.filter(c => !S.favs.includes(c)).slice(0, 4);
+  const chip = (c, fav) => `<button class="chip" data-city="${c}" aria-pressed="${c === S.city}">${fav ? icon.star : ''}${c}</button>`;
+  $('recent').innerHTML = S.favs.length || others.length > 1
+    ? S.favs.map(c => chip(c, true)).join('') + (S.favs.length && others.length ? '<span class="sep" aria-hidden="true"></span>' : '') + others.map(c => chip(c)).join('')
+    : '';
 
-  // 台灣端機場篩選：只有一個機場就不顯示
-  const here = new Set(DATA.flights.filter(f => f[6] === S.city).flatMap(f => [f[1], f[2]]));
-  const tws = Object.keys(TW).filter(c => here.has(c));
-  if (!tws.includes(S.origin)) S.origin = '';
+  // 台灣端機場篩選（依目前分頁）：該方向只有一個機場就不顯示
+  const tws = twAirports(outbound), cur = activeAp(outbound);
   $('originWrap').hidden = tws.length < 2;
+  $('originLabel').textContent = outbound ? '出發機場' : '抵達機場';
   $('origin').innerHTML = [['', '全部'], ...tws.map(c => [c, TW[c]])].map(([c, n]) =>
-    `<button class="chip" data-origin="${c}" aria-pressed="${S.origin === c}">${n}</button>`).join('');
+    `<button class="chip" data-origin="${c}" aria-pressed="${cur === c}">${n}</button>`).join('');
 
   // 分頁
   for (const t of ['go', 'back']) {
-    const b = $('tab-' + t), d = S.date[t];
+    const b = $('tab-' + t), d = S.date[t], ap = activeAp(t === 'go');
     b.setAttribute('aria-selected', S.tab === t);
     b.tabIndex = S.tab === t ? 0 : -1;
+    b.querySelector('b').textContent = (t === 'go' ? '去程' : '回程') + (ap ? ` · ${TW[ap]}` : '');
     b.querySelector('span').textContent = d ? `${short(d)} · ${flightsFor(d, t === 'go').length} 班` : '未選日期';
   }
 
@@ -305,6 +350,13 @@ $('city').innerHTML = Object.entries(groups).map(([r, cs]) =>
 if (!S.recent.length) S.recent = [S.city];
 
 $('city').addEventListener('change', e => setCity(e.target.value));
+$('star').addEventListener('click', () => {
+  const on = !S.favs.includes(S.city);
+  S.favs = on ? [...S.favs, S.city] : S.favs.filter(c => c !== S.city);
+  localStorage.favs = JSON.stringify(S.favs);
+  render();
+  toast(on ? `${icon.check}已加入最愛　${S.city}` : `已移出最愛　${S.city}`);
+});
 $('date').addEventListener('change', e => e.target.value && setDate(e.target.value));
 $('prev').addEventListener('click', () => setDate(addDays(S.date[S.tab], -1)));
 $('next').addEventListener('click', () => setDate(addDays(S.date[S.tab], 1)));
@@ -319,7 +371,11 @@ document.querySelector('.seg').addEventListener('keydown', e => {
 document.addEventListener('click', e => {
   const b = e.target.closest('button'); if (!b) return;
   if (b.dataset.city) setCity(b.dataset.city);
-  else if ('origin' in b.dataset) { S.origin = b.dataset.origin; localStorage.origin = S.origin; render(); }
+  else if ('origin' in b.dataset) {
+    S.origin[S.tab] = b.dataset.origin;
+    localStorage[S.tab === 'go' ? 'originGo' : 'originBack'] = b.dataset.origin;
+    render();
+  }
   else if (b.dataset.goto) setDate(b.dataset.goto);
   else if (b.dataset.no) copy(b.dataset.no);
 });
