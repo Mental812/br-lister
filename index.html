@@ -144,7 +144,13 @@
   .lf h2 small { font-weight:400; color:var(--muted); font-size:12px; margin-left:6px; }
   .lfrow { display:grid; grid-template-columns:1fr auto; gap:2px 12px; align-items:center; padding:10px 0; border-top:1px solid var(--line); }
   .lfrow:first-of-type { border-top:0; }
-  .lfrow .ap { font-size:14px; color:var(--muted); }
+  .lfrow .ap { font-size:15px; font-weight:600; margin-right:8px; }
+  .badge { display:inline-block; font-size:12px; font-weight:700; padding:1px 8px; border-radius:999px; margin-right:4px; vertical-align:1px; }
+  .badge.easy { background:var(--accent-soft); color:var(--accent); }
+  .badge.mid { background:var(--warn-bg); color:var(--warn); }
+  .badge.hard { background:var(--tag-bg); color:var(--tag); }
+  .badge.best { background:none; border:1px solid var(--accent); color:var(--accent); font-weight:600; }
+  .lfnote { font-size:13px; color:var(--muted); }
   .lfrow .pct { font-size:26px; font-weight:800; font-variant-numeric:tabular-nums; line-height:1.1; }
   .lfrow .pct small { font-size:14px; font-weight:600; margin-left:1px; }
   .lfrow .spark { grid-row:span 2; width:96px; height:36px; stroke:var(--accent); stroke-width:2; }
@@ -288,6 +294,9 @@ const spark = vs => {
   const last = pts[pts.length - 1];
   return `<svg class="spark" viewBox="0 0 96 36" aria-hidden="true"><polyline points="${line}"/>${last ? `<circle cx="${last[0]}" cy="${last[1]}" r="3"/>` : ''}</svg>`;
 };
+// ponytail: 候補經驗門檻（整月平均載客率），實際用起來不準就調這兩個數字
+const LF_EASY = 75, LF_HARD = 88;
+const verdict = v => v < LF_EASY ? ['easy', '好上'] : v < LF_HARD ? ['mid', '看日子'] : ['hard', '難上'];
 function lfPanel(outbound) {
   const L = DATA.lf; if (!L) return '';
   const ap = activeAp(outbound), dir = outbound ? 'go' : 'back';
@@ -295,17 +304,23 @@ function lfPanel(outbound) {
     .filter(f => f[6] === S.city && twSide(f, outbound) in TW && (!ap || twSide(f, outbound) === ap))
     .map(f => outbound ? f[2] : f[1]))];
   const n = L.months.length, m = +L.months[n - 1].slice(5);
+  const nowOf = c => L.ap[c]?.[dir]?.[n - 1];
+  const known = codes.filter(c => nowOf(c) != null);
+  const emptiest = known.length > 1 ? known.reduce((a, b) => nowOf(b) < nowOf(a) ? b : a) : '';
+  const name = c => AP[c] ? `${AP[c]} ${c}` : `${S.city} ${c}`;
   const rows = codes.map(c => {
-    const s = L.ap[c]?.[dir], now = s?.[n - 1];
-    if (!s) return `<div class="lfrow"><span class="ap">${AP[c] ? `${AP[c]} ${c}` : `${S.city} ${c}`}</span><span class="deltas"><span class="flat">民航局無此航點資料</span></span></div>`;
+    const s = L.ap[c]?.[dir], now = nowOf(c);
+    if (now == null) return `<div class="lfrow"><span class="ap">${name(c)}</span><span class="lfnote">民航局無此航點資料</span></div>`;
+    const [cls, word] = verdict(now);
     return `<div class="lfrow">
-      <span class="ap">${AP[c] ? `${AP[c]} ${c}` : `${S.city} ${c}`}</span>${spark(s)}
-      <span><span class="pct">${now != null ? `${now.toFixed(1)}<small>%</small>` : '—'}</span>
-        <span class="deltas">${delta('MoM', now, s?.[n - 2])}${delta('YoY', now, s?.[n - 13])}</span></span></div>`;
+      <span><span class="ap">${name(c)}</span><span class="badge ${cls}">${word}</span>${c === emptiest ? '<span class="badge best">較空</span>' : ''}</span>${spark(s)}
+      <span><span class="pct">${now.toFixed(1)}<small>%</small></span>
+        <span class="deltas">${delta('比上月', now, s[n - 2])}${delta('比去年', now, s[n - 13])}</span></span></div>`;
   }).join('');
-  return rows && `<section class="lf" aria-label="長榮載客率">
-    <h2>長榮 ${m} 月載客率・${outbound ? '去程' : '回程'}<small>民航局月報</small></h2>${rows}
-    <p>台灣各機場合計，單位為百分點。整月平均，越低通常越好候補；週末、連假會差很多。</p></section>`;
+  return rows && `<section class="lf" aria-label="候補難易度">
+    <h2>候補難易度・${outbound ? '去程' : '回程'}<small>長榮 ${m} 月載客率</small></h2>${rows}
+    <p>好上 &lt; ${LF_EASY}%｜看日子 ${LF_EASY}～${LF_HARD}%（避開週末）｜難上 ≥ ${LF_HARD}%<br>
+    民航局月報、台灣各機場合計的整月平均；連假前後會更滿。▲ 變擠、▼ 變空，單位為百分點。</p></section>`;
 }
 
 function render() {
