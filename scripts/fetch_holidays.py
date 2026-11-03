@@ -24,5 +24,5 @@ for roc in (year - 1911, year - 1910):
     print(f'{roc} 年 ok', file=sys.stderr)
 
 assert off, '抓不到放假日'
-pathlib.Path(__file__).with_name('holidays.json').write_text(json.dumps(sorted(set(off))), encoding='utf-8')
+(pathlib.Path(__file__).resolve().parent.parent / 'data' / 'holidays.json').write_text(json.dumps(sorted(set(off))), encoding='utf-8')
 print(f'ok: {len(off)} 個放假日', file=sys.stderr)

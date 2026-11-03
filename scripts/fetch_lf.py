@@ -64,6 +64,6 @@ for i, (fid, y, m) in enumerate(files):
 
 assert len(months) == MONTHS and data, '抓不到資料'
 lf = {'months': months, 'ap': dict(sorted(data.items()))}
-pathlib.Path(__file__).with_name('lf.json').write_text(json.dumps(lf, ensure_ascii=False, separators=(',', ':')), encoding='utf-8')
+(pathlib.Path(__file__).resolve().parent.parent / 'data' / 'lf.json').write_text(json.dumps(lf, ensure_ascii=False, separators=(',', ':')), encoding='utf-8')
 print(f'ok: {months[0]} ~ {months[-1]}，{len(data)} 個機場', file=sys.stderr)
 if unknown: print('未對應的航點（略過）:', '、'.join(sorted(unknown)), file=sys.stderr)
