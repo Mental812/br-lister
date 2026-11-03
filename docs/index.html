@@ -109,7 +109,10 @@
     position:relative; flex:1; height:48px; border-radius:14px; background:var(--surface); box-shadow:var(--shadow);
     display:flex; align-items:center; justify-content:center; gap:8px; font-weight:600; font-size:17px;
   }
-  .date small { font-weight:500; font-size:13px; color:var(--accent); background:var(--accent-soft); padding:1px 8px; border-radius:999px; }
+  /* 標籤掛在日期右邊、不佔寬度，日期永遠置中；手機寬度只放得下一個標籤，假日優先 */
+  #dateText { position:relative; white-space:nowrap; }
+  .date .tags { position:absolute; left:100%; top:50%; translate:0 -50%; margin-left:8px; display:flex; gap:4px; }
+  .date small { white-space:nowrap; font-weight:500; font-size:13px; color:var(--accent); background:var(--accent-soft); padding:1px 8px; border-radius:999px; }
   .date small.dk.mid { color:var(--warn); background:var(--warn-bg); }
   .date small.dk.hard { color:var(--tag); background:var(--tag-bg); font-weight:700; }
   .note.hard { background:var(--tag-bg); color:var(--tag); }
@@ -393,7 +396,7 @@ function render() {
   const rel = { [today]: '今天', [addDays(today, 1)]: '明天' }[dateStr];
   const dk = dateStr && dayKind(dateStr);
   $('dateText').innerHTML = dateStr
-    ? `${short(dateStr)}${rel ? ` <small>${rel}</small>` : ''}${dk ? ` <small class="dk ${dk[0]}">${dk[1]}</small>` : ''}`
+    ? `${short(dateStr)}${dk ? `<span class="tags"><small class="dk ${dk[0]}">${dk[1]}</small></span>` : rel ? `<span class="tags"><small>${rel}</small></span>` : ''}`
     : `<span class="ph">選擇${outbound ? '去' : '回'}程日期</span>`;
 
   // 結果
