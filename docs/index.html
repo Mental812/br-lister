@@ -76,6 +76,8 @@
     appearance:none; -webkit-appearance:none; width:100%; border:0; background:none;
     font-size:24px; font-weight:700; padding:2px 32px 6px 0; min-height:44px;
   }
+  /* 電腦版 Chrome/Edge 的選單沿用 select 底色，透明時會變白底淺字 */
+  .select option, .select optgroup { background:var(--surface); color:var(--text); }
   .select svg { position:absolute; right:0; top:50%; translate:0 -50%; color:var(--muted); pointer-events:none; }
   .chips { display:flex; flex-wrap:wrap; gap:8px; margin-top:6px; }
   .chip {
@@ -457,6 +459,8 @@ $('star').addEventListener('click', () => {
   toast(on ? `${icon.check}已加入最愛　${S.city}` : `已移出最愛　${S.city}`);
 });
 $('date').addEventListener('change', e => e.target.value && setDate(e.target.value));
+// 電腦上點日期欄不會自己開月曆（只有點小圖示才會），手機點了本來就會開
+if (matchMedia('(pointer:fine)').matches) $('date').addEventListener('click', e => { try { e.target.showPicker(); } catch {} });
 $('prev').addEventListener('click', () => setDate(addDays(S.date[S.tab], -1)));
 $('next').addEventListener('click', () => setDate(addDays(S.date[S.tab], 1)));
 for (const t of ['go', 'back']) $('tab-' + t).addEventListener('click', () => {
